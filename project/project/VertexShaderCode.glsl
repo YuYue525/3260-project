@@ -9,6 +9,8 @@ uniform mat4 view;
 uniform mat4 projection;
 
 out vec2 TexCoord;
+out vec3 normalWorld;
+out vec3 vertexPositionWorld;
 
 void main()
 {
@@ -18,4 +20,9 @@ void main()
     gl_Position = out_position;
     
     TexCoord = vertexUV;
+    
+    vec4 normal_temp = model * vec4(normal, 0);
+    normalWorld = normal_temp.xyz;
+    
+    vertexPositionWorld = newPosition.xyz;
 }
