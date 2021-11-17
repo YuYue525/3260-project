@@ -41,6 +41,8 @@
 		B03FF73E2731337E00DB73A2 /* Shader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Shader.h; sourceTree = "<group>"; };
 		B03FF73F2731337E00DB73A2 /* Texture.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Texture.cpp; sourceTree = "<group>"; };
 		B03FF7422731353300DB73A2 /* CourseProjectMaterials */ = {isa = PBXFileReference; lastKnownFileType = folder; path = CourseProjectMaterials; sourceTree = "<group>"; };
+		B089CB3A273AB58700EB5D55 /* SkyboxFragmentShader.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = SkyboxFragmentShader.glsl; sourceTree = "<group>"; };
+		B089CB3B273AB58700EB5D55 /* SkyboxVertexShader.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = SkyboxVertexShader.glsl; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,13 +79,15 @@
 		B03FF72927312F4A00DB73A2 /* project */ = {
 			isa = PBXGroup;
 			children = (
+				B089CB3A273AB58700EB5D55 /* SkyboxFragmentShader.glsl */,
+				B089CB3B273AB58700EB5D55 /* SkyboxVertexShader.glsl */,
 				B03FF7422731353300DB73A2 /* CourseProjectMaterials */,
 				B03FF73B2731337E00DB73A2 /* Dependencies */,
-				B03FF7392731337E00DB73A2 /* FragmentShaderCode.glsl */,
 				B03FF73A2731337E00DB73A2 /* Shader.cpp */,
 				B03FF73E2731337E00DB73A2 /* Shader.h */,
 				B03FF73F2731337E00DB73A2 /* Texture.cpp */,
 				B03FF73C2731337E00DB73A2 /* Texture.h */,
+				B03FF7392731337E00DB73A2 /* FragmentShaderCode.glsl */,
 				B03FF73D2731337E00DB73A2 /* VertexShaderCode.glsl */,
 				B03FF72A27312F4A00DB73A2 /* main.cpp */,
 			);
