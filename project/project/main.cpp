@@ -26,23 +26,39 @@ Student Name: YU Yue
 const int SCR_WIDTH = 1920;
 const int SCR_HEIGHT = 1080;
 
+
 //camera views
-glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  100.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraPos   = glm::vec3(0.0f, 10.0f,  15.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, -0.3f, -1.0f);
 glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
 
-GLfloat lastX = SCR_WIDTH / 2.0;
-GLfloat lastY = SCR_HEIGHT / 2.0;
-GLfloat fov = 45.0f;
-glm::vec3 cameraPosBefore;
+glm::vec3 front = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 right = glm::vec3(1.0f, 0.0f, 0.0f);
+GLfloat delta_angle = 0.0f;
+GLfloat delta_angle_before;
+
+glm::vec3 cameraPosTrans = glm::vec3(0.0f, 0.0f, 200.0f);
+
+GLfloat lastX;
+GLfloat fov = 60.0f;
 
 //shader
 Shader shader;
 Shader skyboxShader;
 
+bool keys[1024];
+//Delta time
+GLfloat deltaTime = 0.0f;
+GLfloat lastFrame = 0.0f;
+
+//rock random
+GLint randomY[300];
+GLint randomZ[300];
+GLint randomAngle[300];
+GLint randomAngle2[300];
+GLint randomSize[300];
+
 bool firstMouse = true;
-bool firstClick = true;
-bool mouseLeftDown = false;
 
 // struct for storing the obj file
 struct Vertex {
@@ -188,9 +204,17 @@ GLuint spacecraftVAO, spacecraftVBO, spacecraftEBO;
 Model spacecraftObj;
 Texture spacecraftTexture;
 
+GLuint craftVAO, craftVBO, craftEBO;
+Model craftObj;
+Texture craftTexture;
+
 GLuint planetVAO, planetVBO, planetEBO;
 Model planetObj;
 Texture planetTexture[2];
+
+GLuint rockVAO, rockVBO, rockEBO;
+Model rockObj;
+Texture rockTexture;
 
 GLuint loadCubemap(std::vector<const GLchar *> faces)
 {
@@ -286,16 +310,17 @@ void sendDataToOpenGL()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
     glBindVertexArray(0);
     
-    faces.push_back("./CourseProjectMaterials/texture/skybox/orbital-element_rt.bmp");
-    faces.push_back("./CourseProjectMaterials/texture/skybox/orbital-element_lf.bmp");
-    faces.push_back("./CourseProjectMaterials/texture/skybox/orbital-element_up.bmp");
-    faces.push_back("./CourseProjectMaterials/texture/skybox/orbital-element_dn.bmp");
-    faces.push_back("./CourseProjectMaterials/texture/skybox/orbital-element_bk.bmp");
-    faces.push_back("./CourseProjectMaterials/texture/skybox/orbital-element_ft.bmp");
+    faces.push_back("./CourseProjectMaterials/texture/skybox/right.bmp");
+    faces.push_back("./CourseProjectMaterials/texture/skybox/left.bmp");
+    faces.push_back("./CourseProjectMaterials/texture/skybox/top.bmp");
+    faces.push_back("./CourseProjectMaterials/texture/skybox/bottom.bmp");
+    faces.push_back("./CourseProjectMaterials/texture/skybox/back.bmp");
+    faces.push_back("./CourseProjectMaterials/texture/skybox/front.bmp");
     cubemapTexture = loadCubemap(faces);
     
-    spacecraftObj = loadOBJ("./CourseProjectMaterials/object/spacecraft.obj");
     
+    //spacecraft
+    spacecraftObj = loadOBJ("./CourseProjectMaterials/object/spacecraft.obj");
     spacecraftTexture.setupTexture("./CourseProjectMaterials/texture/spacecraftTexture.bmp");
     //vertex array object
     glGenVertexArrays(1, &spacecraftVAO);
@@ -321,6 +346,36 @@ void sendDataToOpenGL()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
+    //craft
+    /*
+    craftObj = loadOBJ("./CourseProjectMaterials/object/craft.obj");
+    craftTexture.setupTexture("./CourseProjectMaterials/texture/craftTexture.bmp");
+    //vertex array object
+    glGenVertexArrays(1, &craftVAO);
+    glBindVertexArray(craftVAO);
+    
+    //vertex buffer object
+    glGenBuffers(1, &craftVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, craftVBO);
+    glBufferData(GL_ARRAY_BUFFER, craftObj.vertices.size() * sizeof(Vertex), &craftObj.vertices[0], GL_STATIC_DRAW);
+    //vertex position
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+    //vertex texture coordinate
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
+    //vertex normal
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+    //index buffer
+    glGenBuffers(1, &craftEBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, craftEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, craftObj.indices.size() * sizeof(unsigned int), &craftObj.indices[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    */
+    
+    //planet
     planetObj = loadOBJ("./CourseProjectMaterials/object/planet.obj");
     
     planetTexture[0].setupTexture("./CourseProjectMaterials/texture/earthTexture.bmp");
@@ -348,6 +403,56 @@ void sendDataToOpenGL()
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, planetObj.indices.size() * sizeof(unsigned int), &planetObj.indices[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    
+    //rock obj
+    rockObj = loadOBJ("./CourseProjectMaterials/object/rock.obj");
+    
+    rockTexture.setupTexture("./CourseProjectMaterials/texture/rockTexture.bmp");
+    //vertex array object
+    glGenVertexArrays(1, &rockVAO);
+    glBindVertexArray(rockVAO);
+    
+    //vertex buffer object
+    glGenBuffers(1, &rockVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, rockVBO);
+    glBufferData(GL_ARRAY_BUFFER, rockObj.vertices.size() * sizeof(Vertex), &rockObj.vertices[0], GL_STATIC_DRAW);
+    //vertex position
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+    //vertex texture coordinate
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
+    //vertex normal
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+    //index buffer
+    glGenBuffers(1, &rockEBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, rockEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, rockObj.indices.size() * sizeof(unsigned int), &rockObj.indices[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    
+    srand((unsigned)(time(NULL)));
+    for(int p = 0; p < 300; p++){
+        GLint a = rand() % 300 - 150;
+        randomY[p] = a;
+    }
+    for(int p = 0; p < 300; p++){
+        GLint a = rand() % 400 - 200;
+        randomZ[p] = a;
+    }
+    for(int p = 0; p < 300; p++){
+        GLint a = rand() % 25 + 10;
+        randomSize[p] = a;
+    }
+    for(int p = 0; p < 300; p++){
+        GLint a = rand() % 3600;
+        randomAngle[p] = a;
+    }
+    for(int p = 0; p < 300; p++){
+        GLint a = rand() % 3600;
+        randomAngle2[p] = a;
+    }
     
     
     
@@ -378,8 +483,13 @@ void setupLight(Shader lshader)
     
     glm::vec3 point_ambientLight = glm::vec3(0.5f, 0.5f, 0.5f);
     lshader.setVec3("point_ambientLight", point_ambientLight);
-    glm::vec3 point_lightPos = glm::vec3(0.0f, 100.0f, 0.0f);
+    glm::vec3 point_lightPos = glm::vec3(0.0f, 100.0f, 100.0f);
     lshader.setVec3("point_lightPos", point_lightPos);
+    
+    point_ambientLight = glm::vec3(0.5f, 0.5f, 0.5f);
+    lshader.setVec3("point_ambientLight_planet", point_ambientLight);
+    point_lightPos = glm::vec3(0.0f, 0.0f, 0.0f);
+    lshader.setVec3("point_lightPos_planet", point_lightPos);
 }
 
 void paintGL(void)  //always run
@@ -395,13 +505,19 @@ void paintGL(void)  //always run
     glm::mat4 view = glm::mat4(1.0f);
     glm::mat4 projection = glm::mat4(1.0f);
     
-    view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-    projection = glm::perspective(glm::radians(fov), (GLfloat)SCR_WIDTH / (GLfloat)SCR_HEIGHT,0.1f, 500.0f);
+    cameraPos   = glm::vec3(15.0f * glm::sin(glm::radians(delta_angle)), 10.0f,  15.0f * glm::cos(glm::radians(delta_angle)));
+    cameraFront = glm::vec3(-1.0f * glm::sin(glm::radians(delta_angle)), -0.3f, -1.0f * glm::cos(glm::radians(delta_angle)));
+    
+    front = glm::vec3(-1.0f * glm::sin(glm::radians(delta_angle)), 0.0f, -1.0f * glm::cos(glm::radians(delta_angle)));
+    right = glm::vec3(1.0f * glm::cos(glm::radians(delta_angle)), 0.0f, -1.0f * glm::sin(glm::radians(delta_angle)));
+        
+    view = glm::lookAt(cameraPos + cameraPosTrans, cameraPos + cameraPosTrans + cameraFront, cameraUp);
+    projection = glm::perspective(glm::radians(fov), (GLfloat)SCR_WIDTH / (GLfloat)SCR_HEIGHT,0.1f, 2000.0f);
     
     glDepthMask(GL_FALSE);// Remember to turn depth writing off
     skyboxShader.use();
 
-    model = glm::scale(model, glm::vec3(200.0f, 200.0f, 200.0f));
+    model = glm::scale(model, glm::vec3(500.0f, 500.0f, 500.0f));
     skyboxShader.setMat4("model", model);
     skyboxShader.setMat4("view", view);
     skyboxShader.setMat4("projection", projection);
@@ -426,8 +542,9 @@ void paintGL(void)  //always run
     shader.setInt("NormalMapping", 1);
     shader.setInt("Gold", 2);
     
-    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 80.0f));
+    model = glm::translate(model, cameraPosTrans);
     model = glm::scale(model, glm::vec3(0.01f, 0.01f, 0.01f));
+    model = glm::rotate(model, glm::radians(delta_angle), glm::vec3(0.0f, 1.0f, 0.0f));
     model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     model = glm::translate(model, glm::vec3(0.0f, -200.0f, 0.0f));
     shader.setMat4("model", model);
@@ -437,9 +554,16 @@ void paintGL(void)  //always run
     glDrawElements(GL_TRIANGLES, spacecraftObj.indices.size(), GL_UNSIGNED_INT, 0);
     
     model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 0.0f, -80.0f));
+    shader.setMat4("model", model);
+    craftTexture.bind(0);
+    glBindVertexArray(craftVAO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, craftEBO);
+    glDrawElements(GL_TRIANGLES, craftObj.indices.size(), GL_UNSIGNED_INT, 0);
+    
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, -2.0f, 0.0f));
     model = glm::scale(model, glm::vec3(4.0f, 4.0f, 4.0f));
-    model = glm::rotate(model, (GLfloat)glfwGetTime() * (glm::radians(30.0f)), glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::rotate(model, (GLfloat)glfwGetTime() * (glm::radians(15.0f)), glm::vec3(0.0f, 1.0f, 0.0f));
     shader.setMat4("model", model);
     shader.setInt("normalMapping_flag", 1);
     planetTexture[0].bind(0);
@@ -448,6 +572,21 @@ void paintGL(void)  //always run
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, planetEBO);
     glDrawElements(GL_TRIANGLES, planetObj.indices.size(), GL_UNSIGNED_INT, 0);
     shader.setInt("normalMapping_flag", 0);
+    
+    for (int i = 0; i < 300; i++){
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+        model = glm::rotate(model, (GLfloat)glfwGetTime() * (glm::radians(3.0f)) + glm::radians(randomAngle[i] * 0.1f), glm::vec3(0.0f, 1.0f, 0.0f));
+        //std::cout << randomAngle[i] * 0.1f << std::endl;
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f + randomY[i] * 0.01f, 20.0f + randomZ[i]*0.01f));
+        model = glm::rotate(model, (GLfloat)glfwGetTime() * (glm::radians(30.0f)) + glm::radians(randomAngle2[i] * 0.1f), glm::vec3(1.0f, 1.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(0.01f * randomSize[i], 0.01f * randomSize[i], 0.01f * randomSize[i]));
+        shader.setMat4("model", model);
+        rockTexture.bind(0);
+        glBindVertexArray(rockVAO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, rockEBO);
+        glDrawElements(GL_TRIANGLES, rockObj.indices.size(), GL_UNSIGNED_INT, 0);
+    }
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -458,90 +597,22 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
     // Sets the mouse-button callback for the current window.
-    if (button == GLFW_MOUSE_BUTTON_LEFT) {
-        if (action == GLFW_PRESS) {
-            firstClick = true;
-            mouseLeftDown = true;
-        }
-        else if (action == GLFW_RELEASE)
-        {
-            firstMouse = true;
-            mouseLeftDown = false;
-        }
-    }
+
 }
 
 void cursor_position_callback(GLFWwindow* window, double x, double y)
 {
-    // Sets the cursor position callback for the current window
-    if (!mouseLeftDown) {
-        if (firstMouse)
-        {
-            lastX = x;
-            lastY = y;
-            cameraPosBefore = cameraPos;
-            firstMouse = false;
-        }
-
-        GLfloat xoffset = x - lastX;
-        GLfloat yoffset = lastY - y;
-
-        GLfloat sensitivity = 0.01;    // Change this value to your liking
-        xoffset *= sensitivity;
-        yoffset *= sensitivity;
-
-        GLfloat cameraPosLen = glm::sqrt(cameraPosBefore.x * cameraPosBefore.x + cameraPosBefore.y * cameraPosBefore.y + cameraPosBefore.z * cameraPosBefore.z);
-
-        cameraPos.x = (cos(glm::radians(-xoffset)) * cameraPosBefore.x + sin(glm::radians(-xoffset)) * cameraPosBefore.z);
-        if (glm::asin(cameraPosBefore.y / cameraPosLen) + glm::radians(-yoffset) > glm::radians(89.0f)) {
-            cameraPos.y = cameraPosLen * glm::sin(glm::radians(89.0f));
-        }
-        else if (glm::asin(cameraPosBefore.y / cameraPosLen) + glm::radians(-yoffset) < glm::radians((-89.0f))) {
-            cameraPos.y = cameraPosLen * glm::sin(glm::radians(-89.0f));
-        }
-        else {
-            cameraPos.y = cameraPosLen * glm::sin(glm::asin(cameraPosBefore.y / cameraPosLen) + glm::radians(-yoffset));
-        }
-        cameraPos.z = -sin(glm::radians(-xoffset)) * cameraPosBefore.x + cos(glm::radians(-xoffset)) * cameraPosBefore.z;
-
-        cameraFront.x = -0.5 * cameraPos.x;
-        cameraFront.y = -0.5 * cameraPos.y;
-        cameraFront.z = -0.5 * cameraPos.z;
+    
+    if(firstMouse)
+    {
+        lastX = x;
+        delta_angle_before = delta_angle;
+        firstMouse = false;
     }
-    else {
-        if (firstClick)
-        {
-            lastX = x;
-            lastY = y;
-            cameraPosBefore = cameraPos;
-            firstClick = false;
-        }
-
-        GLfloat xoffset = x - lastX;
-        GLfloat yoffset = lastY - y;
-
-        GLfloat sensitivity = 0.5;    // Change this value to your liking
-        xoffset *= sensitivity;
-        yoffset *= sensitivity;
-
-        GLfloat cameraPosLen = glm::sqrt(cameraPosBefore.x * cameraPosBefore.x + cameraPosBefore.y * cameraPosBefore.y + cameraPosBefore.z * cameraPosBefore.z);
-
-        cameraPos.x = (cos(glm::radians(-xoffset)) * cameraPosBefore.x + sin(glm::radians(-xoffset)) * cameraPosBefore.z);
-        if (glm::asin(cameraPosBefore.y / cameraPosLen) + glm::radians(-yoffset) > glm::radians(89.0f)) {
-            cameraPos.y = cameraPosLen * glm::sin(glm::radians(89.0f));
-        }
-        else if (glm::asin(cameraPosBefore.y / cameraPosLen) + glm::radians(-yoffset) < glm::radians((-89.0f))) {
-            cameraPos.y = cameraPosLen * glm::sin(glm::radians(-89.0f));
-        }
-        else {
-            cameraPos.y = cameraPosLen * glm::sin(glm::asin(cameraPosBefore.y / cameraPosLen) + glm::radians(-yoffset));
-        }
-        cameraPos.z = -sin(glm::radians(-xoffset)) * cameraPosBefore.x + cos(glm::radians(-xoffset)) * cameraPosBefore.z;
-
-        cameraFront.x = -0.5 * cameraPos.x;
-        cameraFront.y = -0.5 * cameraPos.y;
-        cameraFront.z = -0.5 * cameraPos.z;
-    }
+    GLfloat xoffset = x - lastX;
+    
+    delta_angle = delta_angle_before - 0.2f * xoffset;
+    
 }
 
 
@@ -559,7 +630,37 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     // Sets the Keyboard callback for the current window.
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GL_TRUE);
+    
+    
+    if (key >= 0 && key < 1024)
+    {
+        if (action == GLFW_PRESS){
+            keys[key] = true;
+        }
+        else if (action == GLFW_RELEASE) {
+            keys[key] = false;
+        }
+    }
 }
+
+void do_movement()
+{
+    //penguin controls
+    GLfloat Speed = deltaTime;
+    if (keys[GLFW_KEY_UP])
+        cameraPosTrans += front * (40 * Speed);
+    if (keys[GLFW_KEY_DOWN])
+        cameraPosTrans -= front * (40 * Speed);
+    if (keys[GLFW_KEY_LEFT])
+        cameraPosTrans -= right * (40 * Speed);
+    if (keys[GLFW_KEY_RIGHT])
+        cameraPosTrans += right * (40 * Speed);
+
+
+}
+
 
 
 int main(int argc, char* argv[])
@@ -609,6 +710,11 @@ int main(int argc, char* argv[])
 
         /* Poll for and process events */
         glfwPollEvents();
+        
+        GLfloat currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+        do_movement();
     }
 
     glfwTerminate();

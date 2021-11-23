@@ -15,6 +15,16 @@
 		B03FF7412731337E00DB73A2 /* Texture.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B03FF73F2731337E00DB73A2 /* Texture.cpp */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		B0C13FAE274CEC28006663DA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B0C13FAA274CEC28006663DA /* opengl.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = B0CF08F526E6063F003269C0;
+			remoteInfo = opengl;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXCopyFilesBuildPhase section */
 		B03FF72527312F4A00DB73A2 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -43,6 +53,9 @@
 		B03FF7422731353300DB73A2 /* CourseProjectMaterials */ = {isa = PBXFileReference; lastKnownFileType = folder; path = CourseProjectMaterials; sourceTree = "<group>"; };
 		B089CB3A273AB58700EB5D55 /* SkyboxFragmentShader.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = SkyboxFragmentShader.glsl; sourceTree = "<group>"; };
 		B089CB3B273AB58700EB5D55 /* SkyboxVertexShader.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = SkyboxVertexShader.glsl; sourceTree = "<group>"; };
+		B0C13FA8274CEA95006663DA /* libSOIL.1.07.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libSOIL.1.07.dylib; path = ../../SOIL/build/libSOIL.1.07.dylib; sourceTree = "<group>"; };
+		B0C13FAA274CEC28006663DA /* opengl.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = opengl.xcodeproj; path = ../opengl/opengl.xcodeproj; sourceTree = "<group>"; };
+		B0C13FB0274CEC4A006663DA /* libSOIL.1.07.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libSOIL.1.07.dylib; path = project/Dependencies/SOIL/build/libSOIL.1.07.dylib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,11 +110,22 @@
 		B03FF7312731328000DB73A2 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				B0C13FB0274CEC4A006663DA /* libSOIL.1.07.dylib */,
+				B0C13FAA274CEC28006663DA /* opengl.xcodeproj */,
+				B0C13FA8274CEA95006663DA /* libSOIL.1.07.dylib */,
 				B03FF736273132A300DB73A2 /* libglfw.3.3.dylib */,
 				B03FF7342731329500DB73A2 /* libGLEW.2.2.0.dylib */,
 				B03FF7322731328000DB73A2 /* OpenGL.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		B0C13FAB274CEC28006663DA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B0C13FAF274CEC28006663DA /* opengl */,
+			);
+			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -148,12 +172,28 @@
 			mainGroup = B03FF71E27312F4A00DB73A2;
 			productRefGroup = B03FF72827312F4A00DB73A2 /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = B0C13FAB274CEC28006663DA /* Products */;
+					ProjectRef = B0C13FAA274CEC28006663DA /* opengl.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				B03FF72627312F4A00DB73A2 /* project */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		B0C13FAF274CEC28006663DA /* opengl */ = {
+			isa = PBXReferenceProxy;
+			fileType = "compiled.mach-o.executable";
+			path = opengl;
+			remoteRef = B0C13FAE274CEC28006663DA /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
 
 /* Begin PBXSourcesBuildPhase section */
 		B03FF72327312F4A00DB73A2 /* Sources */ = {
@@ -289,6 +329,7 @@
 					"$(inherited)",
 					/usr/local/Cellar/glew/2.2.0_1/lib,
 					/usr/local/Cellar/glfw/3.3.4/lib,
+					"$(PROJECT_DIR)/project/Dependencies/SOIL/build",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -303,6 +344,7 @@
 					"$(inherited)",
 					/usr/local/Cellar/glew/2.2.0_1/lib,
 					/usr/local/Cellar/glfw/3.3.4/lib,
+					"$(PROJECT_DIR)/project/Dependencies/SOIL/build",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};

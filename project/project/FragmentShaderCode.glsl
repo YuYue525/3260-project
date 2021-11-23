@@ -15,6 +15,9 @@ uniform vec3 eyePositionWorld;
 uniform vec3 point_ambientLight;
 uniform vec3 point_lightPos;
 
+uniform vec3 point_ambientLight_planet;
+uniform vec3 point_lightPos_planet;
+
 out vec4 Color;
 
 void main()
@@ -51,5 +54,27 @@ void main()
     vec4 point_color = fd * vec4(1.0f, 1.0f, 1.0f, 1.0f) * vec4(temp_texture * (point_ambientLight + clamp(point_diffuseLight, 0, 1) + point_specularLight), 1.0f);
     
     
-    Color = point_color;
+    //planet
+    v = point_lightPos_planet - vertexPositionWorld;
+    d = sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
+    fd = 1.0/(1.0 + 0.007 * d + 0.0002*d*d);
+    
+    //env_diffuse
+    point_lightVectorWorld = normalize(point_lightPos_planet - vertexPositionWorld);
+    point_brightness = dot(point_lightVectorWorld, normal);
+    point_diffuseLight = vec3(point_brightness, point_brightness, point_brightness);
+    //point_specular
+    point_reflectedLightVectorWorld = reflect(-point_lightVectorWorld, normal);
+    eyeVectorWorld = normalize(eyePositionWorld - vertexPositionWorld);
+    point_s = clamp(dot(point_reflectedLightVectorWorld, eyeVectorWorld), 0, 1);
+    point_s = pow(point_s, 50);
+    point_specularLight = vec3(point_s, point_s, point_s);
+    
+    vec4 point_color_planet = fd * vec4(1.0f, 1.0f, 0.2f, 1.0f) * vec4(temp_texture * (point_ambientLight + clamp(point_diffuseLight, 0, 1) + point_specularLight), 1.0f);
+    
+    
+    
+    
+    
+    Color = point_color + point_color_planet;
 }
