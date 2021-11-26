@@ -16,10 +16,13 @@ Student Name: YU Yue
 #include "Shader.h"
 #include "Texture.h"
 
+
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <map>
+
+
 
 
 // screen setting
@@ -32,8 +35,8 @@ glm::vec3 cameraPos   = glm::vec3(0.0f, 10.0f,  15.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, -0.3f, -1.0f);
 glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
 
-glm::vec3 front = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 right = glm::vec3(1.0f, 0.0f, 0.0f);
+glm::vec3 craftFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 craftRight = glm::vec3(1.0f, 0.0f, 0.0f);
 GLfloat delta_angle = 0.0f;
 GLfloat delta_angle_before;
 
@@ -134,12 +137,38 @@ Model loadOBJ(const char* objPath)
             temp_normals.push_back(normal);
         }
         else if (strcmp(lineHeader, "f") == 0) {
+            //printf("%s\n", lineHeader);
             // Face elements
-            V vertices[3];
-            for (int i = 0; i < 3; i++) {
+            int count = 0;
+            
+            std::string line;
+            std::getline(file, line);
+            //std::cout << line <<std::endl;
+            
+            if (line.length() != 0){
+                file.seekg(-line.length(), std::ios::cur);
+            }
+            
+            
+            char* s = (char *)line.c_str();
+            
+            char *p = std::strtok(s, " ");
+            while(p) {
+                count += 1;
+                //std::cout << count <<std::endl;
+                p = strtok(NULL, " ");
+            }
+            
+
+            
+            V vertices[5];
+            for (int i = 0; i < count ; i++) {
                 char ch;
                 file >> vertices[i].index_position >> ch >> vertices[i].index_uv >> ch >> vertices[i].index_normal;
+                
+                
             }
+            
 
             // Check if there are more than three vertices in one face.
             std::string redundency;
@@ -150,26 +179,134 @@ Model loadOBJ(const char* objPath)
                 std::cerr << "Your obj file can't be read properly by our simple parser :-( Try exporting with other options." << std::endl;
                 exit(1);
             }
+             
+            if(count == 3)
+            {
+                for (int i = 0; i < 3; i++) {
+                    if (temp_vertices.find(vertices[i]) == temp_vertices.end()) {
+                        // the vertex never shows before
+                        Vertex vertex;
+                        vertex.position = temp_positions[vertices[i].index_position - 1];
+                        vertex.uv = temp_uvs[vertices[i].index_uv - 1];
+                        vertex.normal = temp_normals[vertices[i].index_normal - 1];
 
-            for (int i = 0; i < 3; i++) {
-                if (temp_vertices.find(vertices[i]) == temp_vertices.end()) {
-                    // the vertex never shows before
-                    Vertex vertex;
-                    vertex.position = temp_positions[vertices[i].index_position - 1];
-                    vertex.uv = temp_uvs[vertices[i].index_uv - 1];
-                    vertex.normal = temp_normals[vertices[i].index_normal - 1];
+                        model.vertices.push_back(vertex);
+                        model.indices.push_back(num_vertices);
+                        temp_vertices[vertices[i]] = num_vertices;
+                        num_vertices += 1;
+                    }
+                    else {
+                        // reuse the existing vertex
+                        unsigned int index = temp_vertices[vertices[i]];
+                        model.indices.push_back(index);
+                    }
+                } // for
+            }
+            else if(count == 4)
+            {
+                for (int i = 0; i < 3; i++) {
+                    if (temp_vertices.find(vertices[i]) == temp_vertices.end()) {
+                        // the vertex never shows before
+                        Vertex vertex;
+                        vertex.position = temp_positions[vertices[i].index_position - 1];
+                        vertex.uv = temp_uvs[vertices[i].index_uv - 1];
+                        vertex.normal = temp_normals[vertices[i].index_normal - 1];
 
-                    model.vertices.push_back(vertex);
-                    model.indices.push_back(num_vertices);
-                    temp_vertices[vertices[i]] = num_vertices;
-                    num_vertices += 1;
+                        model.vertices.push_back(vertex);
+                        model.indices.push_back(num_vertices);
+                        temp_vertices[vertices[i]] = num_vertices;
+                        num_vertices += 1;
+                    }
+                    else {
+                        // reuse the existing vertex
+                        unsigned int index = temp_vertices[vertices[i]];
+                        model.indices.push_back(index);
+                    }
                 }
-                else {
-                    // reuse the existing vertex
-                    unsigned int index = temp_vertices[vertices[i]];
-                    model.indices.push_back(index);
+                for (int i = 0; i < 4; i++) {
+                    if (temp_vertices.find(vertices[i]) == temp_vertices.end() && i !=1) {
+                        // the vertex never shows before
+                        Vertex vertex;
+                        vertex.position = temp_positions[vertices[i].index_position - 1];
+                        vertex.uv = temp_uvs[vertices[i].index_uv - 1];
+                        vertex.normal = temp_normals[vertices[i].index_normal - 1];
+
+                        model.vertices.push_back(vertex);
+                        model.indices.push_back(num_vertices);
+                        temp_vertices[vertices[i]] = num_vertices;
+                        num_vertices += 1;
+                    }
+                    else if(i !=1)
+                    {
+                        // reuse the existing vertex
+                        unsigned int index = temp_vertices[vertices[i]];
+                        model.indices.push_back(index);
+                    }
                 }
-            } // for
+            }
+            else if(count == 5)
+            {
+                for (int i = 0; i < 3; i++) {
+                    if (temp_vertices.find(vertices[i]) == temp_vertices.end()) {
+                        // the vertex never shows before
+                        Vertex vertex;
+                        vertex.position = temp_positions[vertices[i].index_position - 1];
+                        vertex.uv = temp_uvs[vertices[i].index_uv - 1];
+                        vertex.normal = temp_normals[vertices[i].index_normal - 1];
+
+                        model.vertices.push_back(vertex);
+                        model.indices.push_back(num_vertices);
+                        temp_vertices[vertices[i]] = num_vertices;
+                        num_vertices += 1;
+                    }
+                    else {
+                        // reuse the existing vertex
+                        unsigned int index = temp_vertices[vertices[i]];
+                        model.indices.push_back(index);
+                    }
+                } // for
+                for (int i = 0; i < 4; i++) {
+                    if (temp_vertices.find(vertices[i]) == temp_vertices.end() && i !=1) {
+                        // the vertex never shows before
+                        Vertex vertex;
+                        vertex.position = temp_positions[vertices[i].index_position - 1];
+                        vertex.uv = temp_uvs[vertices[i].index_uv - 1];
+                        vertex.normal = temp_normals[vertices[i].index_normal - 1];
+
+                        model.vertices.push_back(vertex);
+                        model.indices.push_back(num_vertices);
+                        temp_vertices[vertices[i]] = num_vertices;
+                        num_vertices += 1;
+                    }
+                    else if(i !=1)
+                    {
+                        // reuse the existing vertex
+                        unsigned int index = temp_vertices[vertices[i]];
+                        model.indices.push_back(index);
+                    }
+                } // for
+                for (int i = 0; i < 5; i++) {
+                    if (temp_vertices.find(vertices[i]) == temp_vertices.end() && i !=1 && i !=2) {
+                        // the vertex never shows before
+                        Vertex vertex;
+                        vertex.position = temp_positions[vertices[i].index_position - 1];
+                        vertex.uv = temp_uvs[vertices[i].index_uv - 1];
+                        vertex.normal = temp_normals[vertices[i].index_normal - 1];
+
+                        model.vertices.push_back(vertex);
+                        model.indices.push_back(num_vertices);
+                        temp_vertices[vertices[i]] = num_vertices;
+                        num_vertices += 1;
+                    }
+                    else if(i !=1 && i !=2)
+                    {
+                        // reuse the existing vertex
+                        unsigned int index = temp_vertices[vertices[i]];
+                        model.indices.push_back(index);
+                    }
+                } // for
+            }
+            
         } // else if
         else {
             // it's not a vertex, texture coordinate, normal or face
@@ -348,8 +485,12 @@ void sendDataToOpenGL()
     
     //craft
     /*
+    meshModel craftObj("./CourseProjectMaterials/object/craft.obj");
+     */
+
     craftObj = loadOBJ("./CourseProjectMaterials/object/craft.obj");
-    craftTexture.setupTexture("./CourseProjectMaterials/texture/craftTexture.bmp");
+     
+    craftTexture.setupTexture("./CourseProjectMaterials/texture/ringTexture.bmp");
     //vertex array object
     glGenVertexArrays(1, &craftVAO);
     glBindVertexArray(craftVAO);
@@ -373,7 +514,7 @@ void sendDataToOpenGL()
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, craftObj.indices.size() * sizeof(unsigned int), &craftObj.indices[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    */
+    
     
     //planet
     planetObj = loadOBJ("./CourseProjectMaterials/object/planet.obj");
@@ -508,8 +649,8 @@ void paintGL(void)  //always run
     cameraPos   = glm::vec3(15.0f * glm::sin(glm::radians(delta_angle)), 10.0f,  15.0f * glm::cos(glm::radians(delta_angle)));
     cameraFront = glm::vec3(-1.0f * glm::sin(glm::radians(delta_angle)), -0.3f, -1.0f * glm::cos(glm::radians(delta_angle)));
     
-    front = glm::vec3(-1.0f * glm::sin(glm::radians(delta_angle)), 0.0f, -1.0f * glm::cos(glm::radians(delta_angle)));
-    right = glm::vec3(1.0f * glm::cos(glm::radians(delta_angle)), 0.0f, -1.0f * glm::sin(glm::radians(delta_angle)));
+    craftFront = glm::vec3(-1.0f * glm::sin(glm::radians(delta_angle)), 0.0f, -1.0f * glm::cos(glm::radians(delta_angle)));
+    craftRight = glm::vec3(1.0f * glm::cos(glm::radians(delta_angle)), 0.0f, -1.0f * glm::sin(glm::radians(delta_angle)));
         
     view = glm::lookAt(cameraPos + cameraPosTrans, cameraPos + cameraPosTrans + cameraFront, cameraUp);
     projection = glm::perspective(glm::radians(fov), (GLfloat)SCR_WIDTH / (GLfloat)SCR_HEIGHT,0.1f, 2000.0f);
@@ -554,6 +695,8 @@ void paintGL(void)  //always run
     glDrawElements(GL_TRIANGLES, spacecraftObj.indices.size(), GL_UNSIGNED_INT, 0);
     
     model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 50.0f));
+    model = glm::rotate(model, (GLfloat)glfwGetTime() * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     shader.setMat4("model", model);
     craftTexture.bind(0);
     glBindVertexArray(craftVAO);
@@ -650,13 +793,13 @@ void do_movement()
     //penguin controls
     GLfloat Speed = deltaTime;
     if (keys[GLFW_KEY_UP])
-        cameraPosTrans += front * (40 * Speed);
+        cameraPosTrans += craftFront * (40 * Speed);
     if (keys[GLFW_KEY_DOWN])
-        cameraPosTrans -= front * (40 * Speed);
+        cameraPosTrans -= craftFront * (40 * Speed);
     if (keys[GLFW_KEY_LEFT])
-        cameraPosTrans -= right * (40 * Speed);
+        cameraPosTrans -= craftRight * (40 * Speed);
     if (keys[GLFW_KEY_RIGHT])
-        cameraPosTrans += right * (40 * Speed);
+        cameraPosTrans += craftRight * (40 * Speed);
 
 
 }
