@@ -63,6 +63,11 @@ GLint randomSize[300];
 
 bool firstMouse = true;
 
+GLint craftTextureIndex[3] = {0, 0, 0};
+GLint collect_count = 0;
+GLint collected[3] = {0, 0, 0};
+
+
 // struct for storing the obj file
 struct Vertex {
     glm::vec3 position;
@@ -161,7 +166,7 @@ Model loadOBJ(const char* objPath)
             
 
             
-            V vertices[5];
+            V vertices[10];
             for (int i = 0; i < count ; i++) {
                 char ch;
                 file >> vertices[i].index_position >> ch >> vertices[i].index_uv >> ch >> vertices[i].index_normal;
@@ -171,6 +176,7 @@ Model loadOBJ(const char* objPath)
             
 
             // Check if there are more than three vertices in one face.
+            /*
             std::string redundency;
             std::getline(file, redundency);
             if (redundency.length() >= 5) {
@@ -178,7 +184,8 @@ Model loadOBJ(const char* objPath)
                 std::cerr << "Please note that we only support the faces drawing with triangles. There are more than three vertices in one face." << std::endl;
                 std::cerr << "Your obj file can't be read properly by our simple parser :-( Try exporting with other options." << std::endl;
                 exit(1);
-            }
+            }*/
+            
              
             if(count == 3)
             {
@@ -339,11 +346,11 @@ GLuint cubemapTexture;
 
 GLuint spacecraftVAO, spacecraftVBO, spacecraftEBO;
 Model spacecraftObj;
-Texture spacecraftTexture;
+Texture spacecraftTexture[2];
 
 GLuint craftVAO, craftVBO, craftEBO;
 Model craftObj;
-Texture craftTexture;
+Texture craftTexture[2];
 
 GLuint planetVAO, planetVBO, planetEBO;
 Model planetObj;
@@ -352,6 +359,8 @@ Texture planetTexture[2];
 GLuint rockVAO, rockVBO, rockEBO;
 Model rockObj;
 Texture rockTexture;
+
+Texture goldTexture;
 
 GLuint loadCubemap(std::vector<const GLchar *> faces)
 {
@@ -458,7 +467,8 @@ void sendDataToOpenGL()
     
     //spacecraft
     spacecraftObj = loadOBJ("./CourseProjectMaterials/object/spacecraft.obj");
-    spacecraftTexture.setupTexture("./CourseProjectMaterials/texture/spacecraftTexture.bmp");
+    spacecraftTexture[0].setupTexture("./CourseProjectMaterials/texture/spacecraftTexture.bmp");
+    spacecraftTexture[1].setupTexture("./CourseProjectMaterials/texture/gold_big.bmp");
     //vertex array object
     glGenVertexArrays(1, &spacecraftVAO);
     glBindVertexArray(spacecraftVAO);
@@ -490,7 +500,8 @@ void sendDataToOpenGL()
 
     craftObj = loadOBJ("./CourseProjectMaterials/object/craft.obj");
      
-    craftTexture.setupTexture("./CourseProjectMaterials/texture/ringTexture.bmp");
+    craftTexture[0].setupTexture("./CourseProjectMaterials/texture/ringTexture.bmp");
+    craftTexture[1].setupTexture("./CourseProjectMaterials/texture/red_big.bmp");
     //vertex array object
     glGenVertexArrays(1, &craftVAO);
     glBindVertexArray(craftVAO);
@@ -595,7 +606,7 @@ void sendDataToOpenGL()
         randomAngle2[p] = a;
     }
     
-    
+    goldTexture.setupTexture("./CourseProjectMaterials/texture/gold_big.bmp");
     
 }
 
@@ -689,16 +700,71 @@ void paintGL(void)  //always run
     model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     model = glm::translate(model, glm::vec3(0.0f, -200.0f, 0.0f));
     shader.setMat4("model", model);
-    spacecraftTexture.bind(0);
+    if(collected[0] == 0 || collected[1] == 0 || collected[2] == 0 )
+        spacecraftTexture[0].bind(0);
+    else
+        spacecraftTexture[1].bind(0);
     glBindVertexArray(spacecraftVAO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, spacecraftEBO);
     glDrawElements(GL_TRIANGLES, spacecraftObj.indices.size(), GL_UNSIGNED_INT, 0);
     
+    
+    GLfloat x_pos = (((GLint)(glfwGetTime() * 0.5f) / 1 % 2) == 0) ? ((GLfloat)(glfwGetTime() * 0.5f) - (GLint)(glfwGetTime() * 0.5f) / 1) : (1- ((GLfloat)(glfwGetTime() * 0.5f) - (GLint)(glfwGetTime() * 0.5f) / 1));
+    
+    //craft 1
     model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 50.0f));
+    model = glm::translate(model, glm::vec3(-100.0f * x_pos + 50.0f, -2.0f, 50.0f));
+    
+    glm::vec3 distance_vec = cameraPosTrans - glm::vec3(-100.0f * x_pos + 50.0f, -2.0f, 50.0f);
+    GLfloat distance1 = sqrt(distance_vec.x * distance_vec.x + distance_vec.y * distance_vec.y + distance_vec.z * distance_vec.z);
+    
+    if (distance1 < 10)
+        craftTextureIndex[0] = 1;
+    
     model = glm::rotate(model, (GLfloat)glfwGetTime() * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     shader.setMat4("model", model);
-    craftTexture.bind(0);
+    if(craftTextureIndex[0] == 0)
+        craftTexture[0].bind(0);
+    else
+        craftTexture[((GLint)(glfwGetTime() * 4.0f) / 1 % 2)].bind(0);
+    glBindVertexArray(craftVAO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, craftEBO);
+    glDrawElements(GL_TRIANGLES, craftObj.indices.size(), GL_UNSIGNED_INT, 0);
+    //craft 2
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(100.0f * x_pos - 50.0f, -2.0f, 100.0f));
+    
+    distance_vec = cameraPosTrans - glm::vec3(100.0f * x_pos - 50.0f, -2.0f, 100.0f);
+    GLfloat distance2 = sqrt(distance_vec.x * distance_vec.x + distance_vec.y * distance_vec.y + distance_vec.z * distance_vec.z);
+    
+    if (distance2 < 10)
+        craftTextureIndex[1] = 1;
+    
+    model = glm::rotate(model, (GLfloat)glfwGetTime() * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    shader.setMat4("model", model);
+    if(craftTextureIndex[1] == 0)
+        craftTexture[0].bind(0);
+    else
+        craftTexture[((GLint)(glfwGetTime() * 4.0f) / 1 % 2)].bind(0);
+    glBindVertexArray(craftVAO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, craftEBO);
+    glDrawElements(GL_TRIANGLES, craftObj.indices.size(), GL_UNSIGNED_INT, 0);
+    //craft 3
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(-100.0f * x_pos + 50.0f, -2.0f, 150.0f));
+    
+    distance_vec = cameraPosTrans - glm::vec3(-100.0f * x_pos + 50.0f, -2.0f, 150.0f);
+    GLfloat distance3 = sqrt(distance_vec.x * distance_vec.x + distance_vec.y * distance_vec.y + distance_vec.z * distance_vec.z);
+    
+    if (distance3 < 10)
+        craftTextureIndex[2] = 1;
+    
+    model = glm::rotate(model, (GLfloat)glfwGetTime() * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    shader.setMat4("model", model);
+    if(craftTextureIndex[2] == 0)
+        craftTexture[0].bind(0);
+    else
+        craftTexture[((GLint)(glfwGetTime() * 4.0f) / 1 % 2)].bind(0);
     glBindVertexArray(craftVAO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, craftEBO);
     glDrawElements(GL_TRIANGLES, craftObj.indices.size(), GL_UNSIGNED_INT, 0);
@@ -718,7 +784,6 @@ void paintGL(void)  //always run
     
     for (int i = 0; i < 300; i++){
         model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
         model = glm::rotate(model, (GLfloat)glfwGetTime() * (glm::radians(3.0f)) + glm::radians(randomAngle[i] * 0.1f), glm::vec3(0.0f, 1.0f, 0.0f));
         //std::cout << randomAngle[i] * 0.1f << std::endl;
         model = glm::translate(model, glm::vec3(0.0f, 0.0f + randomY[i] * 0.01f, 20.0f + randomZ[i]*0.01f));
@@ -730,6 +795,34 @@ void paintGL(void)  //always run
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, rockEBO);
         glDrawElements(GL_TRIANGLES, rockObj.indices.size(), GL_UNSIGNED_INT, 0);
     }
+    for (int i = 0; i < 3; i++){
+        model = glm::mat4(1.0f);
+        
+        GLfloat rotate_angle = (GLfloat)glfwGetTime() * (glm::radians(3.0f)) + glm::radians(i * 120.0f);
+
+        glm::vec3 trans = glm::vec3(20.0f * glm::sin(rotate_angle), 0.0f, 20.0f * glm::cos(rotate_angle));
+        
+        model = glm::translate(model, trans);
+        model = glm::rotate(model, (GLfloat)glfwGetTime() * (glm::radians(30.0f)) + glm::radians(randomAngle2[i] * 0.1f), glm::vec3(1.0f, 1.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(0.4f , 0.4f , 0.4f ));
+        shader.setMat4("model", model);
+        
+        distance_vec = cameraPosTrans - trans;
+        GLfloat distance = sqrt(distance_vec.x * distance_vec.x + distance_vec.y * distance_vec.y + distance_vec.z * distance_vec.z);
+        
+        if (distance < 5)
+            collected[i] = 1;
+        
+        if(collected[i] == 0)
+        {
+            goldTexture.bind(0);
+            glBindVertexArray(rockVAO);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, rockEBO);
+            glDrawElements(GL_TRIANGLES, rockObj.indices.size(), GL_UNSIGNED_INT, 0);
+        }
+
+    }
+    
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
