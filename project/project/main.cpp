@@ -67,6 +67,7 @@ GLint craftTextureIndex[3] = {0, 0, 0};
 GLint collect_count = 0;
 GLint collected[3] = {0, 0, 0};
 
+GLint col = 0;
 
 // struct for storing the obj file
 struct Vertex {
@@ -362,6 +363,10 @@ Texture rockTexture;
 
 Texture goldTexture;
 
+GLuint satVAO, satVBO, satEBO;
+Model satObj;
+Texture satTexture;
+
 GLuint loadCubemap(std::vector<const GLchar *> faces)
 {
     
@@ -607,6 +612,35 @@ void sendDataToOpenGL()
     }
     
     goldTexture.setupTexture("./CourseProjectMaterials/texture/gold_big.bmp");
+
+    //satellite
+    satObj = loadOBJ("./CourseProjectMaterials/object/sat.obj");
+    
+    satTexture.setupTexture("./CourseProjectMaterials/texture/sat.jpg");
+    //planetTexture[1].setupTexture("./CourseProjectMaterials/texture/earthNormal.bmp");
+    //vertex array object
+    glGenVertexArrays(1, &satVAO);
+    glBindVertexArray(satVAO);
+    
+    //vertex buffer object
+    glGenBuffers(1, &satVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, satVBO);
+    glBufferData(GL_ARRAY_BUFFER, satObj.vertices.size() * sizeof(Vertex), &satObj.vertices[0], GL_STATIC_DRAW);
+    //vertex position
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+    //vertex texture coordinate
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
+    //vertex normal
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+    //index buffer
+    glGenBuffers(1, &satEBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, satEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, satObj.indices.size() * sizeof(unsigned int), &satObj.indices[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
 }
 
@@ -700,10 +734,17 @@ void paintGL(void)  //always run
     model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     model = glm::translate(model, glm::vec3(0.0f, -200.0f, 0.0f));
     shader.setMat4("model", model);
-    if(collected[0] == 0 || collected[1] == 0 || collected[2] == 0 )
+    if(collected[0] == 0 || collected[1] == 0 || collected[2] == 0 ){
         spacecraftTexture[0].bind(0);
-    else
-        spacecraftTexture[1].bind(0);
+    }
+    else {
+        if (col == 1){
+            spacecraftTexture[((GLint)(glfwGetTime() * 4.0f) / 1 % 2)].bind(0);
+        }
+        else {
+            spacecraftTexture[1].bind(0);
+        }
+    }
     glBindVertexArray(spacecraftVAO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, spacecraftEBO);
     glDrawElements(GL_TRIANGLES, spacecraftObj.indices.size(), GL_UNSIGNED_INT, 0);
@@ -821,6 +862,27 @@ void paintGL(void)  //always run
             glDrawElements(GL_TRIANGLES, rockObj.indices.size(), GL_UNSIGNED_INT, 0);
         }
 
+    }
+    model = glm::mat4(1.0f);
+    
+    GLfloat rotate_angle = (GLfloat)glfwGetTime() * (glm::radians(3.0f)) + glm::radians(0.0f);
+    glm::vec3 trans = glm::vec3(30.0f * glm::sin(rotate_angle), 0.0f, 30.0f * glm::cos(rotate_angle));
+    model = glm::translate(model, trans);
+    model = glm::rotate(model, (GLfloat)glfwGetTime() * (glm::radians(3.0f)) + glm::radians(randomAngle2[0] * 0.1f), glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::scale(model, glm::vec3(0.3f , 0.3f , 0.3f ));
+    shader.setMat4("model", model);
+    
+    distance_vec = cameraPosTrans - trans;
+    GLfloat distance = sqrt(distance_vec.x * distance_vec.x + distance_vec.y * distance_vec.y + distance_vec.z * distance_vec.z);
+    
+    if (distance < 5)
+        col = 1;
+    if(col == 0)
+    {
+        satTexture.bind(0);
+        glBindVertexArray(satVAO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, satEBO);
+        glDrawElements(GL_TRIANGLES, satObj.indices.size(), GL_UNSIGNED_INT, 0);
     }
     
 }
@@ -957,10 +1019,3 @@ int main(int argc, char* argv[])
 
     return 0;
 }
-
-
-
-
-
-
-
