@@ -18,6 +18,13 @@ uniform vec3 point_lightPos;
 uniform vec3 point_ambientLight_planet;
 uniform vec3 point_lightPos_planet;
 
+uniform vec3 spot_ambientLight;
+uniform vec3 spotPos;
+uniform vec3 spotDir;
+uniform float spotCutOff;
+uniform float spotOuterCutOff;
+uniform int spotOn;
+
 out vec4 Color;
 
 void main()
@@ -73,8 +80,37 @@ void main()
     vec4 point_color_planet = fd * vec4(1.0f, 1.0f, 0.2f, 1.0f) * vec4(temp_texture * (point_ambientLight + clamp(point_diffuseLight, 0, 1) + point_specularLight), 1.0f);
     
     
+    //spot
+    vec3 lightDir = normalize(spotPos - vertexPositionWorld);
+    vec4 spot_color;
+    // Check if lighting is inside the spotlight cone
+    float theta = dot(lightDir, normalize(-spotDir));
+    if(theta > spotCutOff)
+    {
+        vec3 v_spot = spotPos - vertexPositionWorld;
+        float d_spot = sqrt(v_spot.x*v_spot.x + v_spot.y*v_spot.y + v_spot.z*v_spot.z);
+        float fd_spot = 1.0/(1.0 + 0.0014 * d_spot + 0.000007*d_spot*d_spot);
+        
+        vec3 spot_ambient = temp_texture * spot_ambientLight;
+        //env_diffuse
+        vec3 spot_lightVectorWorld = lightDir;
+        float spot_brightness = dot(spot_lightVectorWorld, normalize(normalWorld));
+        vec3 spot_diffuseLight = vec3(spot_brightness, spot_brightness, spot_brightness);
+        //point_specular
+        vec3 spot_reflectedLightVectorWorld = reflect(-spot_lightVectorWorld, normalWorld);
+        float spot_s = clamp(dot(spot_reflectedLightVectorWorld, eyeVectorWorld), 0, 1);
+        spot_s = pow(spot_s, 50);
+        vec3 spot_specularLight = vec3(spot_s, spot_s, spot_s);
+        
+        float epsilon = (spotCutOff - spotOuterCutOff);
+        float intensity = clamp((theta - spotOuterCutOff) / epsilon, 0.0, 1.0);
+        
+        spot_color = fd_spot * vec4(1.0f, 1.0f, 0.0f, 1.0f) * vec4(temp_texture * (spot_ambient + (1-intensity) * (clamp(spot_diffuseLight, 0, 1) + spot_specularLight)), 1.0f);
+    }
+    else {
+        spot_color = vec4(0.0f);
+    }
     
     
-    
-    Color = point_color + point_color_planet;
+    Color = spotOn > 0 ? (0.2* point_color_planet + spot_color):(point_color + point_color_planet);
 }

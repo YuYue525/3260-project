@@ -1,5 +1,9 @@
 /*
 Student Information
+
+Student ID:1155124553
+Student Name: CHANG Chirui
+ 
 Student ID: 1155124490
 Student Name: YU Yue
 */
@@ -68,6 +72,8 @@ GLint collect_count = 0;
 GLint collected[3] = {0, 0, 0};
 
 GLint col = 0;
+
+GLint spotOn = 0;
 
 // struct for storing the obj file
 struct Vertex {
@@ -674,8 +680,18 @@ void setupLight(Shader lshader)
     
     point_ambientLight = glm::vec3(0.5f, 0.5f, 0.5f);
     lshader.setVec3("point_ambientLight_planet", point_ambientLight);
-    point_lightPos = glm::vec3(0.0f, 0.0f, 0.0f);
+    point_lightPos = glm::vec3(0.0f, 5.0f, 0.0f);
     lshader.setVec3("point_lightPos_planet", point_lightPos);
+    
+    //spot light
+    glm::vec3 spot_ambientLight = glm::vec3(0.6f, 0.6f, 0.0f);
+    lshader.setVec3("spot_ambientLight", spot_ambientLight);
+    lshader.setVec3("spotPos", cameraPosTrans);
+    lshader.setVec3("spotDir", craftFront);
+    lshader.setFloat("spotCutOff", glm::cos(glm::radians(20.0f)));
+    lshader.setFloat("spotOuterCutOff", glm::cos(glm::radians(30.0f)));
+    
+    lshader.setInt("spotOn", spotOn);
 }
 
 void paintGL(void)  //always run
@@ -762,7 +778,7 @@ void paintGL(void)  //always run
     if (distance1 < 10)
         craftTextureIndex[0] = 1;
     
-    model = glm::rotate(model, (GLfloat)glfwGetTime() * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::rotate(model, (GLfloat)glfwGetTime() * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     shader.setMat4("model", model);
     if(craftTextureIndex[0] == 0)
         craftTexture[0].bind(0);
@@ -781,7 +797,7 @@ void paintGL(void)  //always run
     if (distance2 < 10)
         craftTextureIndex[1] = 1;
     
-    model = glm::rotate(model, (GLfloat)glfwGetTime() * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::rotate(model, (GLfloat)glfwGetTime() * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     shader.setMat4("model", model);
     if(craftTextureIndex[1] == 0)
         craftTexture[0].bind(0);
@@ -800,7 +816,7 @@ void paintGL(void)  //always run
     if (distance3 < 10)
         craftTextureIndex[2] = 1;
     
-    model = glm::rotate(model, (GLfloat)glfwGetTime() * glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::rotate(model, (GLfloat)glfwGetTime() * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     shader.setMat4("model", model);
     if(craftTextureIndex[2] == 0)
         craftTexture[0].bind(0);
@@ -865,10 +881,10 @@ void paintGL(void)  //always run
     }
     model = glm::mat4(1.0f);
     
-    GLfloat rotate_angle = (GLfloat)glfwGetTime() * (glm::radians(3.0f)) + glm::radians(0.0f);
+    GLfloat rotate_angle = (GLfloat)glfwGetTime() * (glm::radians(10.0f)) + glm::radians(0.0f);
     glm::vec3 trans = glm::vec3(30.0f * glm::sin(rotate_angle), 0.0f, 30.0f * glm::cos(rotate_angle));
     model = glm::translate(model, trans);
-    model = glm::rotate(model, (GLfloat)glfwGetTime() * (glm::radians(3.0f)) + glm::radians(randomAngle2[0] * 0.1f), glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::rotate(model, (GLfloat)glfwGetTime() * (glm::radians(10.0f)) + glm::radians(randomAngle2[0] * 0.1f), glm::vec3(0.0f, 1.0f, 0.0f));
     model = glm::scale(model, glm::vec3(0.3f , 0.3f , 0.3f ));
     shader.setMat4("model", model);
     
@@ -930,6 +946,14 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     // Sets the Keyboard callback for the current window.
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
+    
+    if(key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+    {
+        if(spotOn == 0)
+            spotOn = 1;
+        else
+            spotOn = 0;
+    }
     
     
     if (key >= 0 && key < 1024)
@@ -1019,3 +1043,4 @@ int main(int argc, char* argv[])
 
     return 0;
 }
+
