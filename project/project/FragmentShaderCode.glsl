@@ -112,5 +112,5 @@ void main()
     }
     
     
-    Color = spotOn > 0 ? (0.2* point_color_planet + spot_color):(point_color + point_color_planet);
+    Color = spotOn > 0 ? (0.4* point_color_planet + spot_color):(point_color + point_color_planet);
 }
